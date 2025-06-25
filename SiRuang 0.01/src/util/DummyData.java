@@ -1,15 +1,14 @@
 package util;
 
 import model.*;
-
-import java.util.ArrayList;
 import java.time.LocalTime;
+import java.util.ArrayList;
 
 public class DummyData {
     public static ArrayList<User> getUserList() {
         ArrayList<User> users = new ArrayList<>();
         users.add(new Admin("admin", "123", "Admin Kampus"));
-        users.add(new Mahasiswa("mahasiswa", "123", "Adi", "FT", "TI"));
+        users.add(new Mahasiswa("mahasiswa1", "123", "Adi", "FT", "TI"));
         return users;
     }
 
@@ -22,7 +21,7 @@ public class DummyData {
 
     public static ArrayList<Jadwal> getJadwalList(ArrayList<Ruang> ruangList) {
         ArrayList<Jadwal> jadwal = new ArrayList<>();
-        jadwal.add(new Jadwal("Senin", LocalTime.of(8, 0), LocalTime.of(10, 0), "PBO", ruangList.get(0)));
+        jadwal.add(new Jadwal("SENIN", LocalTime.of(8, 0), LocalTime.of(10, 0), "PBO", ruangList.get(0)));
         return jadwal;
     }
 }

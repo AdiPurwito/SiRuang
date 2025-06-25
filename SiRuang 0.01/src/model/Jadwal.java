@@ -17,26 +17,10 @@ public class Jadwal {
         this.ruang = ruang;
     }
 
-    public boolean isWaktuBentrok(String hariCek, LocalTime jamCek) {
-        return hari.equalsIgnoreCase(hariCek) && (jamCek.isAfter(jamMulai) && jamCek.isBefore(jamSelesai));
-    }
-
-    public Ruang getRuang() {
-        return ruang;
-    }
-
-    public String getHari() {
-        return hari;
-    }
-
-    public LocalTime getJamMulai() {
-        return jamMulai;
-    }
-
-    public LocalTime getJamSelesai() {
-        return jamSelesai;
-    }
-
+    public String getHari() { return hari; }
+    public LocalTime getJamMulai() { return jamMulai; }
+    public LocalTime getJamSelesai() { return jamSelesai; }
+    public Ruang getRuang() { return ruang; }
 
     public void tampilkan() {
         System.out.println(hari + " " + jamMulai + "-" + jamSelesai + " | " + matkul + " di ruang " + ruang.getNama());

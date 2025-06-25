@@ -9,7 +9,7 @@ public class Booking {
     private LocalTime jamMulai;
     private LocalTime jamSelesai;
     private String status; // Menunggu, Diterima, Ditolak
-    private long waktuPengajuan; // time in millis
+    private long waktuPengajuan;
 
     public Booking(Mahasiswa pemesan, Ruang ruang, String hari, LocalTime jamMulai, LocalTime jamSelesai) {
         this.pemesan = pemesan;
@@ -29,9 +29,7 @@ public class Booking {
     public String getStatus() { return status; }
     public long getWaktuPengajuan() { return waktuPengajuan; }
 
-    public void setStatus(String status) {
-        this.status = status;
-    }
+    public void setStatus(String status) { this.status = status; }
 
     public void tampilkanInfo() {
         System.out.println("Booking oleh: " + pemesan.getUsername()

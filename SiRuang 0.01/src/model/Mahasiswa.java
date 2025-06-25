@@ -10,6 +10,9 @@ public class Mahasiswa extends User {
         this.prodi = prodi;
     }
 
+    public String getFakultas() { return fakultas; }
+    public String getProdi() { return prodi; }
+
     @Override
     public void tampilkanDashboard() {
         System.out.println("Selamat datang, " + nama + " (Mahasiswa)");
