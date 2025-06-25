@@ -1,0 +1,38 @@
+.root {
+    -fx-background-color: linear-gradient(to bottom right, #2a2a72, #009ffd);
+    -fx-font-family: "Consolas", monospace;
+}
+
+.label-title {
+    -fx-text-fill: white;
+    -fx-font-size: 18px;
+    -fx-padding: 10;
+}
+
+.label-footer {
+    -fx-text-fill: white;
+    -fx-font-size: 10px;
+    -fx-padding: 5;
+}
+
+.login-box {
+    -fx-background-color: rgba(255,255,255,0.08);
+    -fx-background-radius: 15;
+    -fx-padding: 30;
+    -fx-spacing: 10;
+}
+
+.text-field, .password-field {
+    -fx-background-radius: 10;
+    -fx-background-color: rgba(255,255,255,0.1);
+    -fx-text-fill: white;
+    -fx-prompt-text-fill: #cccccc;
+}
+
+.button-login {
+    -fx-background-color: white;
+    -fx-text-fill: #2a2a72;
+    -fx-font-weight: bold;
+    -fx-background-radius: 10;
+    -fx-padding: 8 20;
+}
