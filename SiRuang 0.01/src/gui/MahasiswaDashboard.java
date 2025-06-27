@@ -30,6 +30,7 @@ public class MahasiswaDashboard {
     private ComboBox<String> jamMulaiCombo, jamSelesaiCombo, ruangCombo;
     private Label notificationLabel;
     private Timer updateTimer;
+    private ListView<String> myBookingsList;
 
     public MahasiswaDashboard(Stage stage, Mahasiswa mahasiswa) {
         this.stage = stage;
@@ -82,7 +83,7 @@ public class MahasiswaDashboard {
         notificationLabel = new Label();
         notificationLabel.getStyleClass().add("notification-label");
 
-        Button waktuButton = new Button("Waktu");
+        Button waktuButton = new Button("Waktu: " + LocalTime.now().format(java.time.format.DateTimeFormatter.ofPattern("HH:mm")));
         waktuButton.getStyleClass().add("waktu-button");
 
         rightBox.getChildren().addAll(notificationLabel, infoBox, waktuButton);
@@ -181,10 +182,10 @@ public class MahasiswaDashboard {
         Label myBookingsTitle = new Label("Booking Saya");
         myBookingsTitle.getStyleClass().add("section-title");
 
-        ListView<String> myBookingsList = new ListView<>();
+        myBookingsList = new ListView<>();
         myBookingsList.getStyleClass().add("bookings-list");
         myBookingsList.setPrefHeight(120);
-        loadMyBookings(myBookingsList);
+        loadMyBookings();
 
         bottomBox.getChildren().addAll(bookingTitle, bookingForm, myBookingsTitle, myBookingsList);
         root.setBottom(bottomBox);
@@ -310,14 +311,19 @@ public class MahasiswaDashboard {
                 "admin"
         );
 
+        // Send notification to mahasiswa
+        NotifikasiController.addNotification(
+                "Booking ruang " + selectedRoom.getNama() + " sedang diproses",
+                "INFO",
+                mahasiswa.getUsername()
+        );
+
         showAlert("Success", "Booking berhasil diajukan! Menunggu persetujuan admin.");
         loadAvailableRooms();
-        loadMyBookings(null);
+        loadMyBookings();
     }
 
-    private void loadMyBookings(ListView<String> bookingsList) {
-        if (bookingsList == null) return;
-
+    private void loadMyBookings() {
         ObservableList<String> myBookings = FXCollections.observableArrayList();
 
         for (Booking booking : Main.bookingList) {
@@ -331,7 +337,7 @@ public class MahasiswaDashboard {
             }
         }
 
-        bookingsList.setItems(myBookings);
+        myBookingsList.setItems(myBookings);
     }
 
     private String getStatusIcon(String status) {
@@ -403,6 +409,7 @@ public class MahasiswaDashboard {
             public void run() {
                 Main.updateBookingStatus();
                 updateNotifications();
+                Platform.runLater(() -> loadMyBookings());
             }
         }, 0, 30000); // Update every 30 seconds
     }
@@ -438,3 +445,21 @@ public class MahasiswaDashboard {
             this.hari = hari;
             this.jam = jam;
             this.mataKuliah = mataKuliah;
+            this.semester = semester;
+            this.kelas = kelas;
+            this.sks = sks;
+            this.dosen = dosen;
+            this.ruang = ruang;
+        }
+
+        // Getters
+        public String getHari() { return hari; }
+        public String getJam() { return jam; }
+        public String getMataKuliah() { return mataKuliah; }
+        public String getSemester() { return semester; }
+        public String getKelas() { return kelas; }
+        public String getSks() { return sks; }
+        public String getDosen() { return dosen; }
+        public String getRuang() { return ruang; }
+    }
+}

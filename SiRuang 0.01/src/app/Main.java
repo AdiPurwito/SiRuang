@@ -5,22 +5,22 @@ SiRuang 0.01/src/
 ├── controller/
 │   ├── AdminController.java
 │   ├── MahasiswaController.java
-│   └── NotificationController.java (NEW)
+│   └── NotificationController.java
 ├── model/
 │   ├── Admin.java
-│   ├── Booking.java (ENHANCED)
+│   ├── Booking.java
 │   ├── Jadwal.java
 │   ├── Mahasiswa.java
 │   ├── Ruang.java
 │   ├── User.java
-│   └── Notification.java (NEW)
+│   └── Notification.java
 ├── view/
-│   ├── LoginView.java (NEW)
-│   ├── AdminDashboard.java (NEW)
-│   └── MahasiswaDashboard.java (NEW)
+│   ├── LoginView.java
+│   ├── AdminDashboard.java
+│   └── MahasiswaDashboard.java
 ├── util/
 │   ├── DummyData.java
-│   └── TimeUtil.java (NEW)
+│   └── TimeUtil.java
 └── resources/
     ├── css/
     │   ├── login.css

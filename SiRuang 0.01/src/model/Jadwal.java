@@ -21,6 +21,7 @@ public class Jadwal {
     public LocalTime getJamMulai() { return jamMulai; }
     public LocalTime getJamSelesai() { return jamSelesai; }
     public Ruang getRuang() { return ruang; }
+    public String getMatkul() { return matkul; }
 
     public void tampilkan() {
         System.out.println(hari + " " + jamMulai + "-" + jamSelesai + " | " + matkul + " di ruang " + ruang.getNama());

@@ -13,7 +13,7 @@ public class LoginPane {
     private Stage stage;
     private VBox root;
 
-    public LoginView(Stage stage) {
+    public LoginPane(Stage stage) {
         this.stage = stage;
         initializeComponents();
     }
