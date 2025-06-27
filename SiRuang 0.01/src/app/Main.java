@@ -1,73 +1,83 @@
+/*
+SiRuang 0.01/src/
+├── app/
+│   └── Main.java
+├── controller/
+│   ├── AdminController.java
+│   ├── MahasiswaController.java
+│   └── NotificationController.java (NEW)
+├── model/
+│   ├── Admin.java
+│   ├── Booking.java (ENHANCED)
+│   ├── Jadwal.java
+│   ├── Mahasiswa.java
+│   ├── Ruang.java
+│   ├── User.java
+│   └── Notification.java (NEW)
+├── view/
+│   ├── LoginView.java (NEW)
+│   ├── AdminDashboard.java (NEW)
+│   └── MahasiswaDashboard.java (NEW)
+├── util/
+│   ├── DummyData.java
+│   └── TimeUtil.java (NEW)
+└── resources/
+    ├── css/
+    │   ├── login.css
+    │   ├── admin.css
+    │   └── mahasiswa.css
+    └── icons/
+        └── (icon files)
+*/
 package app;
 
+import javafx.application.Application;
+import javafx.stage.Stage;
 import model.*;
 import util.DummyData;
-import controller.*;
+import gui.LoginPane;
+import controller.NotifikasiController;
 
-import java.util.Scanner;
 import java.util.ArrayList;
 
-public class Main {
+public class Main extends Application {
 
-    private static ArrayList<User> users;
-    private static ArrayList<Ruang> ruangList;
-    private static ArrayList<Jadwal> jadwalList;
-    private static ArrayList<Booking> bookingList;
+    public static ArrayList<User> users;
+    public static ArrayList<Ruang> ruangList;
+    public static ArrayList<Jadwal> jadwalList;
+    public static ArrayList<Booking> bookingList;
 
-    public static void main(String[] args) {
+    @Override
+    public void start(Stage primaryStage) {
+        // Initialize data
         users = DummyData.getUserList();
         ruangList = DummyData.getRuangList();
         jadwalList = DummyData.getJadwalList(ruangList);
         bookingList = new ArrayList<>();
 
-        runCLIMode();
+        // Show login window
+        LoginPane loginPane = new LoginPane(primaryStage);
+        loginPane.show();
     }
 
-    private static void runCLIMode() {
-        Scanner sc = new Scanner(System.in);
+    public static void main(String[] args) {
+        launch(args);
+    }
 
-        while (true) {
-            System.out.println("==== Login SiRuang ====");
-            System.out.print("Username: ");
-            String user = sc.nextLine();
-            System.out.print("Password: ");
-            String pass = sc.nextLine();
+    // Background task untuk update status booking yang expired
+    public static void updateBookingStatus() {
+        for (Booking booking : bookingList) {
+            String oldStatus = booking.getStatus();
+            booking.checkAndUpdateStatus();
 
-            User loggedIn = null;
-            for (User u : users) {
-                if (u.getUsername().equals(user) && u.checkPassword(pass)) {
-                    loggedIn = u;
-                    break;
-                }
+            // Kirim notifikasi jika status berubah dari Diterima ke Selesai
+            if (oldStatus.equals("Diterima") && booking.getStatus().equals("Selesai")) {
+                NotifikasiController.addNotification(
+                        "Booking ruang " + booking.getRuang().getNama() + " telah selesai.",
+                        "INFO",
+                        booking.getPemesan().getUsername()
+                );
             }
-
-            if (loggedIn != null) {
-                System.out.println("\nLogin berhasil sebagai " + loggedIn.getNama());
-                loggedIn.tampilkanDashboard();
-
-                if (loggedIn instanceof Admin) {
-                    AdminController ac = new AdminController(jadwalList, ruangList, bookingList);
-                    ac.tampilkanMenu();
-                } else if (loggedIn instanceof Mahasiswa mhs) {
-                    MahasiswaController mc = new MahasiswaController(mhs, jadwalList, ruangList, bookingList);
-                    mc.tampilkanMenu();
-                }
-            } else {
-                System.out.println("\nLogin gagal. Username atau password salah.");
-            }
-
-            // Tanya apakah ingin login ulang atau keluar
-            System.out.print("\nKetik 'y' untuk login ulang, atau tekan Enter untuk keluar: ");
-            String ulang = sc.nextLine().trim();
-            if (!ulang.equalsIgnoreCase("y")) {
-                System.out.println("Keluar dari aplikasi. Sampai jumpa!");
-                break;
-            }
-            System.out.println();
         }
-
-        sc.close();
     }
-
-
 }
