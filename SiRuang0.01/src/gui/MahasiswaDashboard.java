@@ -86,7 +86,11 @@ public class MahasiswaDashboard {
         Button waktuButton = new Button("Waktu: " + LocalTime.now().format(java.time.format.DateTimeFormatter.ofPattern("HH:mm")));
         waktuButton.getStyleClass().add("waktu-button");
 
-        rightBox.getChildren().addAll(notificationLabel, infoBox, waktuButton);
+        Button logoutButton = new Button("Logout");
+        logoutButton.getStyleClass().add("logout-button");
+        logoutButton.setOnAction(e -> handleLogout());
+
+        rightBox.getChildren().addAll(notificationLabel, infoBox, waktuButton, logoutButton);
 
         topBox.getChildren().addAll(titleLabel, spacer, rightBox);
         root.setTop(topBox);
@@ -99,11 +103,10 @@ public class MahasiswaDashboard {
         Label tableTitle = new Label("Jadwal Kuliah");
         tableTitle.getStyleClass().add("table-title");
 
-        // Create table
         jadwalTable = new TableView<>();
         jadwalTable.getStyleClass().add("jadwal-table");
+        jadwalTable.setPlaceholder(new ProgressIndicator());
 
-        // Table columns
         TableColumn<JadwalTableData, String> hariCol = new TableColumn<>("Hari");
         TableColumn<JadwalTableData, String> jamCol = new TableColumn<>("Jam");
         TableColumn<JadwalTableData, String> matkulCol = new TableColumn<>("Mata Kuliah");
@@ -138,13 +141,11 @@ public class MahasiswaDashboard {
         Label bookingTitle = new Label("Booking Ruang");
         bookingTitle.getStyleClass().add("section-title");
 
-        // Booking form
         GridPane bookingForm = new GridPane();
         bookingForm.setHgap(15);
         bookingForm.setVgap(10);
         bookingForm.setAlignment(Pos.CENTER);
 
-        // Time selection
         Label jamMulaiLabel = new Label("Jam Mulai:");
         jamMulaiCombo = new ComboBox<>();
         jamMulaiCombo.getStyleClass().add("time-combo");
@@ -155,7 +156,6 @@ public class MahasiswaDashboard {
         jamSelesaiCombo.getStyleClass().add("time-combo");
         loadTimeOptions(jamSelesaiCombo);
 
-        // Room selection
         Label ruangLabel = new Label("Pilih Ruang:");
         ruangCombo = new ComboBox<>();
         ruangCombo.getStyleClass().add("room-combo");
@@ -178,7 +178,6 @@ public class MahasiswaDashboard {
         bookingForm.add(bookingButton, 2, 1);
         bookingForm.add(refreshButton, 3, 1);
 
-        // My bookings section
         Label myBookingsTitle = new Label("Booking Saya");
         myBookingsTitle.getStyleClass().add("section-title");
 
@@ -202,14 +201,12 @@ public class MahasiswaDashboard {
 
     private void loadAvailableRooms() {
         ObservableList<String> availableRooms = FXCollections.observableArrayList();
-
         String hariSekarang = LocalDate.now().getDayOfWeek().toString();
         LocalTime jamSekarang = LocalTime.now();
 
         for (Ruang ruang : Main.ruangList) {
             boolean isAvailable = true;
 
-            // Check jadwal conflict
             for (Jadwal jadwal : Main.jadwalList) {
                 if (jadwal.getRuang().getNama().equals(ruang.getNama()) &&
                         jadwal.getHari().equalsIgnoreCase(hariSekarang) &&
@@ -220,7 +217,6 @@ public class MahasiswaDashboard {
                 }
             }
 
-            // Check booking conflict
             if (isAvailable) {
                 for (Booking booking : Main.bookingList) {
                     if (booking.getRuang().getNama().equals(ruang.getNama()) &&
@@ -252,6 +248,11 @@ public class MahasiswaDashboard {
             return;
         }
 
+        if (!isValidTimeFormat(jamMulaiStr) || !isValidTimeFormat(jamSelesaiStr)) {
+            showAlert("Error", "Format jam tidak valid! Gunakan HH:MM (00:00-23:59)");
+            return;
+        }
+
         LocalTime jamMulai = LocalTime.parse(jamMulaiStr);
         LocalTime jamSelesai = LocalTime.parse(jamSelesaiStr);
 
@@ -260,7 +261,6 @@ public class MahasiswaDashboard {
             return;
         }
 
-        // Get selected room
         String roomName = ruangStr.split(" \\(")[0];
         Ruang selectedRoom = null;
         for (Ruang ruang : Main.ruangList) {
@@ -275,10 +275,8 @@ public class MahasiswaDashboard {
             return;
         }
 
-        // Validate time conflict
         String hariSekarang = LocalDate.now().getDayOfWeek().toString();
 
-        // Check against jadwal
         for (Jadwal jadwal : Main.jadwalList) {
             if (jadwal.getRuang().getNama().equals(selectedRoom.getNama()) &&
                     jadwal.getHari().equalsIgnoreCase(hariSekarang) &&
@@ -288,7 +286,6 @@ public class MahasiswaDashboard {
             }
         }
 
-        // Check against existing bookings
         for (Booking booking : Main.bookingList) {
             if (booking.getRuang().getNama().equals(selectedRoom.getNama()) &&
                     booking.getHari().equalsIgnoreCase(hariSekarang) &&
@@ -299,11 +296,9 @@ public class MahasiswaDashboard {
             }
         }
 
-        // Create booking
         Booking newBooking = new Booking(mahasiswa, selectedRoom, hariSekarang, jamMulai, jamSelesai);
         Main.bookingList.add(newBooking);
 
-        // Send notification to admin
         NotifikasiController.addNotification(
                 "Booking baru dari " + mahasiswa.getUsername() + " untuk ruang " + selectedRoom.getNama() +
                         " pada " + jamMulai + "-" + jamSelesai,
@@ -311,7 +306,6 @@ public class MahasiswaDashboard {
                 "admin"
         );
 
-        // Send notification to mahasiswa
         NotifikasiController.addNotification(
                 "Booking ruang " + selectedRoom.getNama() + " sedang diproses",
                 "INFO",
@@ -324,33 +318,36 @@ public class MahasiswaDashboard {
     }
 
     private void loadMyBookings() {
+        myBookingsList.getItems().clear();
         ObservableList<String> myBookings = FXCollections.observableArrayList();
 
         for (Booking booking : Main.bookingList) {
             if (booking.getPemesan().getUsername().equals(mahasiswa.getUsername())) {
                 String status = booking.getStatus();
-                String statusIcon = getStatusIcon(status);
+                String statusLabel = getStatusLabel(status);
 
-                myBookings.add(statusIcon + " " + booking.getRuang().getNama() +
+                myBookings.add(statusLabel + " " + booking.getRuang().getNama() +
                         " | " + booking.getJamMulai() + "-" + booking.getJamSelesai() +
                         " | " + status);
             }
         }
 
         myBookingsList.setItems(myBookings);
+        myBookingsList.setPlaceholder(new Label("Tidak ada booking"));
     }
 
-    private String getStatusIcon(String status) {
+    private String getStatusLabel(String status) {
         switch (status) {
-            case "Menunggu": return "⏳";
-            case "Diterima": return "✅";
-            case "Ditolak": return "❌";
-            case "Selesai": return "🏁";
-            default: return "❓";
+            case "Menunggu": return "[PENDING]";
+            case "Diterima": return "[APPROVED]";
+            case "Ditolak": return "[REJECTED]";
+            case "Selesai": return "[COMPLETED]";
+            default: return "[UNKNOWN]";
         }
     }
 
     private void loadJadwalData() {
+        jadwalTable.getItems().clear();
         ObservableList<JadwalTableData> data = FXCollections.observableArrayList();
 
         for (Jadwal jadwal : Main.jadwalList) {
@@ -367,6 +364,7 @@ public class MahasiswaDashboard {
         }
 
         jadwalTable.setItems(data);
+        jadwalTable.setPlaceholder(new Label("Tidak ada data jadwal"));
     }
 
     private void updateNotifications() {
@@ -383,21 +381,16 @@ public class MahasiswaDashboard {
 
     private void showNotifications() {
         List<Notifikasi> notifications = NotifikasiController.getNotificationsForUser(mahasiswa.getUsername());
-
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
         alert.setTitle("Notifikasi");
         alert.setHeaderText("Notifikasi Anda:");
-
         StringBuilder content = new StringBuilder();
         for (Notifikasi notif : notifications) {
             content.append(notif.getPesan()).append("\n");
             content.append("Waktu: ").append(TimeUtil.formatDateTime(notif.getWaktu())).append("\n\n");
         }
-
         alert.setContentText(content.toString());
         alert.showAndWait();
-
-        // Mark as read
         NotifikasiController.markAsRead(mahasiswa.getUsername());
         updateNotifications();
     }
@@ -411,7 +404,15 @@ public class MahasiswaDashboard {
                 updateNotifications();
                 Platform.runLater(() -> loadMyBookings());
             }
-        }, 0, 30000); // Update every 30 seconds
+        }, 0, 30000);
+    }
+
+    private void handleLogout() {
+        if (updateTimer != null) {
+            updateTimer.cancel();
+        }
+        LoginPane loginPane = new LoginPane(stage);
+        loginPane.show();
     }
 
     private void showAlert(String title, String message) {
@@ -422,12 +423,19 @@ public class MahasiswaDashboard {
         alert.showAndWait();
     }
 
+    private boolean isValidTimeFormat(String time) {
+        return time.matches("([0-1][0-9]|2[0-3]):[0-5][0-9]");
+    }
+
     public void show() {
         Scene scene = new Scene(root, 1000, 700);
-        scene.getStylesheets().add(getClass().getResource("/resources/css/mahasiswa.css").toExternalForm());
+        scene.getStylesheets().add(getClass().getResource("/resource/mahasiswa.css").toExternalForm());
 
         stage.setTitle("SiRuang - Dashboard Mahasiswa");
         stage.setScene(scene);
+        stage.setResizable(true);
+        stage.setMinWidth(800);
+        stage.setMinHeight(600);
         stage.setOnCloseRequest(e -> {
             if (updateTimer != null) {
                 updateTimer.cancel();
@@ -436,7 +444,6 @@ public class MahasiswaDashboard {
         stage.show();
     }
 
-    // Table data class
     public static class JadwalTableData {
         private String hari, jam, mataKuliah, semester, kelas, sks, dosen, ruang;
 
@@ -452,7 +459,6 @@ public class MahasiswaDashboard {
             this.ruang = ruang;
         }
 
-        // Getters
         public String getHari() { return hari; }
         public String getJam() { return jam; }
         public String getMataKuliah() { return mataKuliah; }

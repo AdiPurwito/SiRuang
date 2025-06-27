@@ -112,6 +112,7 @@ public class AdminDashboard {
         // Booking table
         bookingTable = new TableView<>();
         bookingTable.getStyleClass().add("booking-table");
+        bookingTable.setPlaceholder(new ProgressIndicator());
 
         TableColumn<BookingTableData, String> pemesanCol = new TableColumn<>("Pemesan");
         TableColumn<BookingTableData, String> ruangCol = new TableColumn<>("Ruang");
@@ -126,7 +127,6 @@ public class AdminDashboard {
         jamCol.setCellValueFactory(new PropertyValueFactory<>("jam"));
         statusCol.setCellValueFactory(new PropertyValueFactory<>("status"));
 
-        // Action column with buttons
         aksiCol.setCellFactory(column -> new TableCell<BookingTableData, String>() {
             private final Button approveButton = new Button("Terima");
             private final Button rejectButton = new Button("Tolak");
@@ -184,18 +184,38 @@ public class AdminDashboard {
         // Schedule table
         jadwalTable = new TableView<>();
         jadwalTable.getStyleClass().add("jadwal-table");
+        jadwalTable.setPlaceholder(new ProgressIndicator());
 
         TableColumn<JadwalTableData, String> hariCol = new TableColumn<>("Hari");
         TableColumn<JadwalTableData, String> jamCol = new TableColumn<>("Jam");
         TableColumn<JadwalTableData, String> matkulCol = new TableColumn<>("Mata Kuliah");
         TableColumn<JadwalTableData, String> ruangCol = new TableColumn<>("Ruang");
+        TableColumn<JadwalTableData, String> aksiCol = new TableColumn<>("Aksi");
 
         hariCol.setCellValueFactory(new PropertyValueFactory<>("hari"));
         jamCol.setCellValueFactory(new PropertyValueFactory<>("jam"));
         matkulCol.setCellValueFactory(new PropertyValueFactory<>("mataKuliah"));
         ruangCol.setCellValueFactory(new PropertyValueFactory<>("ruang"));
 
-        jadwalTable.getColumns().addAll(hariCol, jamCol, matkulCol, ruangCol);
+        aksiCol.setCellFactory(column -> new TableCell<JadwalTableData, String>() {
+            private final Button deleteButton = new Button("Hapus");
+
+            {
+                deleteButton.getStyleClass().add("delete-button");
+                deleteButton.setOnAction(e -> {
+                    JadwalTableData data = getTableView().getItems().get(getIndex());
+                    handleDeleteJadwal(data);
+                });
+            }
+
+            @Override
+            protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+                setGraphic(empty ? null : deleteButton);
+            }
+        });
+
+        jadwalTable.getColumns().addAll(hariCol, jamCol, matkulCol, ruangCol, aksiCol);
         loadJadwalData();
 
         // Add schedule form
@@ -256,6 +276,31 @@ public class AdminDashboard {
         roomList.getStyleClass().add("room-list");
         loadRoomData(roomList);
 
+        // Add delete button for rooms
+        roomList.setCellFactory(listView -> new ListCell<String>() {
+            private final Button deleteButton = new Button("Hapus");
+
+            {
+                deleteButton.getStyleClass().add("delete-button");
+                deleteButton.setOnAction(e -> {
+                    String roomInfo = getItem();
+                    handleDeleteRoom(roomInfo, roomList);
+                });
+            }
+
+            @Override
+            protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setText(null);
+                    setGraphic(null);
+                } else {
+                    setText(item);
+                    setGraphic(deleteButton);
+                }
+            }
+        });
+
         // Add room form
         GridPane addRoomForm = new GridPane();
         addRoomForm.setHgap(10);
@@ -287,19 +332,14 @@ public class AdminDashboard {
     }
 
     private void handleBookingAction(BookingTableData data, String newStatus) {
-        // Find the actual booking object
         for (Booking booking : Main.bookingList) {
             if (booking.getPemesan().getUsername().equals(data.getPemesan()) &&
                     booking.getRuang().getNama().equals(data.getRuang().split(" \\(")[0]) &&
                     booking.getStatus().equals("Menunggu")) {
-
                 booking.setStatus(newStatus);
-
-                // Send notification to student
                 String message = "Booking ruang " + booking.getRuang().getNama() + " " +
                         (newStatus.equals("Diterima") ? "telah disetujui" : "ditolak");
                 NotifikasiController.addNotification(message, "INFO", booking.getPemesan().getUsername());
-
                 showAlert("Success", "Booking berhasil " + (newStatus.equals("Diterima") ? "disetujui" : "ditolak"));
                 loadBookingData();
                 break;
@@ -321,6 +361,11 @@ public class AdminDashboard {
             return;
         }
 
+        if (!isValidTimeFormat(jamMulaiStr) || !isValidTimeFormat(jamSelesaiStr)) {
+            showAlert("Error", "Format jam tidak valid! Gunakan HH:MM (00:00-23:59)");
+            return;
+        }
+
         try {
             LocalTime jamMulai = LocalTime.parse(jamMulaiStr);
             LocalTime jamSelesai = LocalTime.parse(jamSelesaiStr);
@@ -330,7 +375,6 @@ public class AdminDashboard {
                 return;
             }
 
-            // Find selected room
             String roomName = ruangStr.split(" \\(")[0];
             Ruang selectedRoom = null;
             for (Ruang ruang : Main.ruangList) {
@@ -345,7 +389,6 @@ public class AdminDashboard {
                 return;
             }
 
-            // Check for conflicts
             for (Jadwal jadwal : Main.jadwalList) {
                 if (jadwal.getRuang().getNama().equals(selectedRoom.getNama()) &&
                         jadwal.getHari().equals(hari) &&
@@ -355,11 +398,9 @@ public class AdminDashboard {
                 }
             }
 
-            // Add new schedule
             Jadwal newJadwal = new Jadwal(hari, jamMulai, jamSelesai, matkul, selectedRoom);
             Main.jadwalList.add(newJadwal);
 
-            // Clear form
             hariCombo.setValue(null);
             jamMulaiField.clear();
             jamSelesaiField.clear();
@@ -370,8 +411,18 @@ public class AdminDashboard {
             loadJadwalData();
 
         } catch (Exception e) {
-            showAlert("Error", "Format jam tidak valid! Gunakan format HH:MM");
+            showAlert("Error", "Terjadi kesalahan: " + e.getMessage());
         }
+    }
+
+    private void handleDeleteJadwal(JadwalTableData data) {
+        Main.jadwalList.removeIf(jadwal ->
+                jadwal.getHari().equals(data.getHari()) &&
+                        jadwal.getMatkul().equals(data.getMataKuliah()) &&
+                        jadwal.getRuang().getNama().equals(data.getRuang())
+        );
+        showAlert("Success", "Jadwal berhasil dihapus!");
+        loadJadwalData();
     }
 
     private void handleAddRoom(TextField namaRuangField, TextField gedungField,
@@ -387,8 +438,11 @@ public class AdminDashboard {
 
         try {
             int kapasitas = Integer.parseInt(kapasitasStr);
+            if (kapasitas <= 0 || kapasitas > 1000) {
+                showAlert("Error", "Kapasitas harus antara 1 dan 1000!");
+                return;
+            }
 
-            // Check if room already exists
             for (Ruang ruang : Main.ruangList) {
                 if (ruang.getNama().equalsIgnoreCase(nama)) {
                     showAlert("Error", "Ruang dengan nama tersebut sudah ada!");
@@ -396,11 +450,9 @@ public class AdminDashboard {
                 }
             }
 
-            // Add new room
             Ruang newRuang = new Ruang(nama, gedung, kapasitas);
             Main.ruangList.add(newRuang);
 
-            // Clear form
             namaRuangField.clear();
             gedungField.clear();
             kapasitasField.clear();
@@ -413,9 +465,16 @@ public class AdminDashboard {
         }
     }
 
-    private void loadBookingData() {
-        ObservableList<BookingTableData> data = FXCollections.observableArrayList();
+    private void handleDeleteRoom(String roomInfo, ListView<String> roomList) {
+        String roomName = roomInfo.split(" - ")[0];
+        Main.ruangList.removeIf(ruang -> ruang.getNama().equals(roomName));
+        showAlert("Success", "Ruang berhasil dihapus!");
+        loadRoomData(roomList);
+    }
 
+    private void loadBookingData() {
+        bookingTable.getItems().clear();
+        ObservableList<BookingTableData> data = FXCollections.observableArrayList();
         for (Booking booking : Main.bookingList) {
             data.add(new BookingTableData(
                     booking.getPemesan().getUsername(),
@@ -425,13 +484,13 @@ public class AdminDashboard {
                     booking.getStatus()
             ));
         }
-
         bookingTable.setItems(data);
+        bookingTable.setPlaceholder(new Label("Tidak ada data booking"));
     }
 
     private void loadJadwalData() {
+        jadwalTable.getItems().clear();
         ObservableList<JadwalTableData> data = FXCollections.observableArrayList();
-
         for (Jadwal jadwal : Main.jadwalList) {
             data.add(new JadwalTableData(
                     jadwal.getHari(),
@@ -440,17 +499,15 @@ public class AdminDashboard {
                     jadwal.getRuang().getNama()
             ));
         }
-
         jadwalTable.setItems(data);
+        jadwalTable.setPlaceholder(new Label("Tidak ada data jadwal"));
     }
 
     private void loadRoomData(ListView<String> roomList) {
         ObservableList<String> rooms = FXCollections.observableArrayList();
-
         for (Ruang ruang : Main.ruangList) {
             rooms.add(ruang.getNama() + " - " + ruang.getGedung() + " (Kapasitas: " + ruang.getKapasitas() + ")");
         }
-
         roomList.setItems(rooms);
     }
 
@@ -468,21 +525,16 @@ public class AdminDashboard {
 
     private void showNotifications() {
         List<Notifikasi> notifications = NotifikasiController.getNotificationsForUser("admin");
-
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
         alert.setTitle("Notifikasi");
         alert.setHeaderText("Notifikasi Admin:");
-
         StringBuilder content = new StringBuilder();
         for (Notifikasi notif : notifications) {
             content.append(notif.getPesan()).append("\n");
             content.append("Waktu: ").append(TimeUtil.formatDateTime(notif.getWaktu())).append("\n\n");
         }
-
         alert.setContentText(content.toString());
         alert.showAndWait();
-
-        // Mark as read
         NotifikasiController.markAsRead("admin");
         updateNotifications();
     }
@@ -495,7 +547,7 @@ public class AdminDashboard {
                 Main.updateBookingStatus();
                 updateNotifications();
             }
-        }, 0, 30000); // Update every 30 seconds
+        }, 0, 30000);
     }
 
     private void handleLogout() {
@@ -514,12 +566,19 @@ public class AdminDashboard {
         alert.showAndWait();
     }
 
+    private boolean isValidTimeFormat(String time) {
+        return time.matches("([0-1][0-9]|2[0-3]):[0-5][0-9]");
+    }
+
     public void show() {
         Scene scene = new Scene(root, 1200, 800);
-        scene.getStylesheets().add(getClass().getResource("resources/admin.css").toExternalForm());
+        scene.getStylesheets().add(getClass().getResource("/resource/admin.css").toExternalForm());
 
         stage.setTitle("SiRuang - Dashboard Admin");
         stage.setScene(scene);
+        stage.setResizable(true);
+        stage.setMinWidth(800);
+        stage.setMinHeight(600);
         stage.setOnCloseRequest(e -> {
             if (updateTimer != null) {
                 updateTimer.cancel();
@@ -528,7 +587,6 @@ public class AdminDashboard {
         stage.show();
     }
 
-    // Table data classes
     public static class BookingTableData {
         private String pemesan, ruang, hari, jam, status;
 

@@ -1,34 +1,3 @@
-/*
-SiRuang 0.01/src/
-├── app/
-│   └── Main.java
-├── controller/
-│   ├── AdminController.java
-│   ├── MahasiswaController.java
-│   └── NotificationController.java
-├── model/
-│   ├── Admin.java
-│   ├── Booking.java
-│   ├── Jadwal.java
-│   ├── Mahasiswa.java
-│   ├── Ruang.java
-│   ├── User.java
-│   └── Notification.java
-├── view/
-│   ├── LoginView.java
-│   ├── AdminDashboard.java
-│   └── MahasiswaDashboard.java
-├── util/
-│   ├── DummyData.java
-│   └── TimeUtil.java
-└── resources/
-    ├── css/
-    │   ├── login.css
-    │   ├── admin.css
-    │   └── mahasiswa.css
-    └── icons/
-        └── (icon files)
-*/
 package app;
 
 import javafx.application.Application;

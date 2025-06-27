@@ -84,7 +84,7 @@ public class LoginPane {
 
     public void show() {
         Scene scene = new Scene(root, 400, 500);
-        scene.getStylesheets().add(getClass().getResource("/resources/css/login.css").toExternalForm());
+        scene.getStylesheets().add(getClass().getResource("/resource/login.css").toExternalForm());
 
         stage.setTitle("SiRuang - Login");
         stage.setScene(scene);
